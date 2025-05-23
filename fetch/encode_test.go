@@ -3,12 +3,13 @@ package fetch_test
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/luma-sys/go-fetch/fetch"
 	"io"
 	"net/http"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/luma-sys/go-fetch/fetch"
 )
 
 type TestStruct struct {
@@ -25,7 +26,6 @@ func TestEncodeData(t *testing.T) {
 
 	// Act
 	reader, err := fetch.EncodeData(data)
-
 	// Assert
 	if err != nil {
 		t.Errorf("EncodeData returned unexpected error: %v", err)
@@ -61,7 +61,6 @@ func TestDecodeJson(t *testing.T) {
 
 	// Act
 	result, err := fetch.DecodeJson[TestStruct](response)
-
 	// Assert
 	if err != nil {
 		t.Errorf("DecodeJson returned unexpected error: %v", err)

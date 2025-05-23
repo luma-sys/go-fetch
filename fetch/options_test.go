@@ -1,10 +1,11 @@
 package fetch_test
 
 import (
-	"github.com/luma-sys/go-fetch/fetch"
 	"net/http"
 	"reflect"
 	"testing"
+
+	"github.com/luma-sys/go-fetch/fetch"
 )
 
 func TestWithBasicAuth(t *testing.T) {

@@ -2,13 +2,14 @@ package fetch_test
 
 import (
 	"context"
-	"github.com/luma-sys/go-fetch/fetch"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/luma-sys/go-fetch/fetch"
 )
 
 func TestNew(t *testing.T) {
@@ -47,7 +48,6 @@ func TestNew(t *testing.T) {
 
 		// Act
 		resp, err := client.Get("/test")
-
 		// Assert
 		if err != nil {
 			t.Errorf("Not expected error, but received: %v", err)
@@ -137,7 +137,6 @@ func TestMetodosHTTP(t *testing.T) {
 
 			// Act
 			resp, err := tt.method(client, "/test", body)
-
 			// Assert
 			if err != nil {
 				t.Errorf("Not expected error, but received: %v", err)
@@ -183,7 +182,6 @@ func TestGetWithContext(t *testing.T) {
 
 		// Act
 		resp, err := client.GetWithContext(ctx, "/test")
-
 		// Assert
 		if err != nil {
 			t.Errorf("Not expected error, but received: %v", err)
