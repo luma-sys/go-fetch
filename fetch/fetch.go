@@ -8,12 +8,12 @@ import (
 )
 
 type FetchAPI interface {
-	Delete(path string, body io.Reader, opts ...requestOpt) (*http.Response, error)
+	Delete(path string, opts ...requestOpt) (*http.Response, error)
 	Patch(path string, body io.Reader, opts ...requestOpt) (*http.Response, error)
 	Put(path string, body io.Reader, opts ...requestOpt) (*http.Response, error)
 	Post(path string, body io.Reader, opts ...requestOpt) (*http.Response, error)
-	Get(path string, body io.Reader, opts ...requestOpt) (*http.Response, error)
-	GetWithContext(ctx context.Context, path string, body io.Reader, opts ...requestOpt) (*http.Response, error)
+	Get(path string, opts ...requestOpt) (*http.Response, error)
+	GetWithContext(ctx context.Context, path string, opts ...requestOpt) (*http.Response, error)
 }
 
 type fetch struct {
@@ -73,8 +73,8 @@ func (e *fetch) request(ctx context.Context, method, path string, body io.Reader
 	return r, err
 }
 
-func (e *fetch) Delete(path string, body io.Reader, opts ...requestOpt) (*http.Response, error) {
-	return e.request(context.Background(), http.MethodDelete, path, body, opts...)
+func (e *fetch) Delete(path string, opts ...requestOpt) (*http.Response, error) {
+	return e.request(context.Background(), http.MethodDelete, path, nil, opts...)
 }
 
 func (e *fetch) Patch(path string, body io.Reader, opts ...requestOpt) (*http.Response, error) {
@@ -89,10 +89,10 @@ func (e *fetch) Post(path string, body io.Reader, opts ...requestOpt) (*http.Res
 	return e.request(context.Background(), http.MethodPost, path, body, opts...)
 }
 
-func (e *fetch) Get(path string, body io.Reader, opts ...requestOpt) (*http.Response, error) {
-	return e.request(context.Background(), http.MethodGet, path, body, opts...)
+func (e *fetch) Get(path string, opts ...requestOpt) (*http.Response, error) {
+	return e.request(context.Background(), http.MethodGet, path, nil, opts...)
 }
 
-func (e *fetch) GetWithContext(ctx context.Context, path string, body io.Reader, opts ...requestOpt) (*http.Response, error) {
-	return e.request(ctx, http.MethodGet, path, body, opts...)
+func (e *fetch) GetWithContext(ctx context.Context, path string, opts ...requestOpt) (*http.Response, error) {
+	return e.request(ctx, http.MethodGet, path, nil, opts...)
 }

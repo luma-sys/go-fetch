@@ -22,7 +22,7 @@ func TestNew(t *testing.T) {
 		cliente := fetch.New(servidor.URL)
 
 		// Act
-		_, err := cliente.Get("/teste", nil)
+		_, err := cliente.Get("/teste")
 
 		// Assert
 		if err == nil {
@@ -46,7 +46,7 @@ func TestNew(t *testing.T) {
 		cliente := fetch.New(servidor.URL, fetch.WithRetry(2))
 
 		// Act
-		resp, err := cliente.Get("/teste", nil)
+		resp, err := cliente.Get("/teste")
 
 		// Assert
 		if err != nil {
@@ -74,7 +74,7 @@ func TestMetodosHTTP(t *testing.T) {
 		{
 			nome: "GET sucesso",
 			método: func(c fetch.FetchAPI, p string, b io.Reader) (*http.Response, error) {
-				return c.Get(p, b)
+				return c.Get(p)
 			},
 			metodoChamado: http.MethodGet,
 			statusCode:    http.StatusOK,
@@ -110,7 +110,7 @@ func TestMetodosHTTP(t *testing.T) {
 		{
 			nome: "DELETE sucesso",
 			método: func(c fetch.FetchAPI, p string, b io.Reader) (*http.Response, error) {
-				return c.Delete(p, b)
+				return c.Delete(p)
 			},
 			metodoChamado: http.MethodDelete,
 			statusCode:    http.StatusNoContent,
@@ -163,7 +163,7 @@ func TestGetWithContext(t *testing.T) {
 		defer cancel()
 
 		// Act
-		_, err := cliente.GetWithContext(ctx, "/teste", nil)
+		_, err := cliente.GetWithContext(ctx, "/teste")
 
 		// Assert
 		if err == nil {
@@ -182,7 +182,7 @@ func TestGetWithContext(t *testing.T) {
 		ctx := context.Background()
 
 		// Act
-		resp, err := cliente.GetWithContext(ctx, "/teste", nil)
+		resp, err := cliente.GetWithContext(ctx, "/teste")
 
 		// Assert
 		if err != nil {
@@ -200,7 +200,7 @@ func TestErros(t *testing.T) {
 		cliente := fetch.New("http://invalid-url")
 
 		// Act
-		_, err := cliente.Get("/teste", nil)
+		_, err := cliente.Get("/teste")
 
 		// Assert
 		if err == nil {
@@ -218,7 +218,7 @@ func TestErros(t *testing.T) {
 		cliente := fetch.New(servidor.URL)
 
 		// Act
-		_, err := cliente.Get("/teste", nil)
+		_, err := cliente.Get("/teste")
 
 		// Assert
 		if err == nil {
