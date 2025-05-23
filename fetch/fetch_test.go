@@ -12,217 +12,217 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	t.Run("Criação sem opções de retry", func(t *testing.T) {
+	t.Run("Create options without retry", func(t *testing.T) {
 		// Arrange & Act
-		servidor := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}))
-		defer servidor.Close()
+		defer server.Close()
 
-		cliente := fetch.New(servidor.URL)
+		client := fetch.New(server.URL)
 
 		// Act
-		_, err := cliente.Get("/teste")
+		_, err := client.Get("/test")
 
 		// Assert
 		if err == nil {
-			t.Error("Esperava erro com status 500, mas não recebeu erro")
+			t.Error("Expected status 500, but did not receive error.")
 		}
 	})
 
-	t.Run("Criação com retry", func(t *testing.T) {
+	t.Run("Create options with retry", func(t *testing.T) {
 		// Arrange
-		tentativas := 0
-		servidor := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			tentativas++
-			if tentativas < 3 {
+		tries := 0
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			tries++
+			if tries < 3 {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 			w.WriteHeader(http.StatusOK)
 		}))
-		defer servidor.Close()
+		defer server.Close()
 
-		cliente := fetch.New(servidor.URL, fetch.WithRetry(2))
+		client := fetch.New(server.URL, fetch.WithRetry(2))
 
 		// Act
-		resp, err := cliente.Get("/teste")
+		resp, err := client.Get("/test")
 
 		// Assert
 		if err != nil {
-			t.Errorf("Não esperava erro, mas recebeu: %v", err)
+			t.Errorf("Not expected error, but received: %v", err)
 		}
 		if resp.StatusCode != http.StatusOK {
-			t.Errorf("Status code incorreto. Esperado: %d, Obtido: %d", http.StatusOK, resp.StatusCode)
+			t.Errorf("Wrong status code. Expected: %d, received: %d", http.StatusOK, resp.StatusCode)
 		}
-		if tentativas != 3 {
-			t.Errorf("Número incorreto de tentativas. Esperado: 3, Obtido: %d", tentativas)
+		if tries != 3 {
+			t.Errorf("Number of tries not expected. Expected: 3, received: %d", tries)
 		}
 	})
 }
 
 func TestMetodosHTTP(t *testing.T) {
 	type testCase struct {
-		nome          string
-		método        func(cliente fetch.FetchAPI, path string, body io.Reader) (*http.Response, error)
-		metodoChamado string
-		statusCode    int
-		corpo         string
+		name         string
+		method       func(client fetch.FetchAPI, path string, body io.Reader) (*http.Response, error)
+		calledMethod string
+		statusCode   int
+		body         string
 	}
 
-	testes := []testCase{
+	tests := []testCase{
 		{
-			nome: "GET sucesso",
-			método: func(c fetch.FetchAPI, p string, b io.Reader) (*http.Response, error) {
+			name: "GET success",
+			method: func(c fetch.FetchAPI, p string, b io.Reader) (*http.Response, error) {
 				return c.Get(p)
 			},
-			metodoChamado: http.MethodGet,
-			statusCode:    http.StatusOK,
-			corpo:         "teste get",
+			calledMethod: http.MethodGet,
+			statusCode:   http.StatusOK,
+			body:         "test get",
 		},
 		{
-			nome: "POST sucesso",
-			método: func(c fetch.FetchAPI, p string, b io.Reader) (*http.Response, error) {
+			name: "POST success",
+			method: func(c fetch.FetchAPI, p string, b io.Reader) (*http.Response, error) {
 				return c.Post(p, b)
 			},
-			metodoChamado: http.MethodPost,
-			statusCode:    http.StatusCreated,
-			corpo:         "teste post",
+			calledMethod: http.MethodPost,
+			statusCode:   http.StatusCreated,
+			body:         "test post",
 		},
 		{
-			nome: "PUT sucesso",
-			método: func(c fetch.FetchAPI, p string, b io.Reader) (*http.Response, error) {
+			name: "PUT success",
+			method: func(c fetch.FetchAPI, p string, b io.Reader) (*http.Response, error) {
 				return c.Put(p, b)
 			},
-			metodoChamado: http.MethodPut,
-			statusCode:    http.StatusOK,
-			corpo:         "teste put",
+			calledMethod: http.MethodPut,
+			statusCode:   http.StatusOK,
+			body:         "test put",
 		},
 		{
-			nome: "PATCH sucesso",
-			método: func(c fetch.FetchAPI, p string, b io.Reader) (*http.Response, error) {
+			name: "PATCH success",
+			method: func(c fetch.FetchAPI, p string, b io.Reader) (*http.Response, error) {
 				return c.Patch(p, b)
 			},
-			metodoChamado: http.MethodPatch,
-			statusCode:    http.StatusOK,
-			corpo:         "teste patch",
+			calledMethod: http.MethodPatch,
+			statusCode:   http.StatusOK,
+			body:         "test patch",
 		},
 		{
-			nome: "DELETE sucesso",
-			método: func(c fetch.FetchAPI, p string, b io.Reader) (*http.Response, error) {
+			name: "DELETE success",
+			method: func(c fetch.FetchAPI, p string, b io.Reader) (*http.Response, error) {
 				return c.Delete(p)
 			},
-			metodoChamado: http.MethodDelete,
-			statusCode:    http.StatusNoContent,
-			corpo:         "",
+			calledMethod: http.MethodDelete,
+			statusCode:   http.StatusNoContent,
+			body:         "",
 		},
 	}
 
-	for _, tt := range testes {
-		t.Run(tt.nome, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			// Arrange
-			servidor := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method != tt.metodoChamado {
-					t.Errorf("Método HTTP incorreto. Esperado: %s, Obtido: %s", tt.metodoChamado, r.Method)
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != tt.calledMethod {
+					t.Errorf("Wrong HTTP method. Expected: %s, received: %s", tt.calledMethod, r.Method)
 				}
 				w.WriteHeader(tt.statusCode)
-				if tt.corpo != "" {
-					w.Write([]byte(tt.corpo))
+				if tt.body != "" {
+					w.Write([]byte(tt.body))
 				}
 			}))
-			defer servidor.Close()
+			defer server.Close()
 
-			cliente := fetch.New(servidor.URL)
+			client := fetch.New(server.URL)
 			body := strings.NewReader("request body")
 
 			// Act
-			resp, err := tt.método(cliente, "/teste", body)
+			resp, err := tt.method(client, "/test", body)
 
 			// Assert
 			if err != nil {
-				t.Errorf("Não esperava erro, mas recebeu: %v", err)
+				t.Errorf("Not expected error, but received: %v", err)
 			}
 			if resp.StatusCode != tt.statusCode {
-				t.Errorf("Status code incorreto. Esperado: %d, Obtido: %d", tt.statusCode, resp.StatusCode)
+				t.Errorf("Wrong status code. Expected: %d, received: %d", tt.statusCode, resp.StatusCode)
 			}
 		})
 	}
 }
 
 func TestGetWithContext(t *testing.T) {
-	t.Run("Contexto cancelado", func(t *testing.T) {
+	t.Run("Cancelled context", func(t *testing.T) {
 		// Arrange
-		servidor := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			time.Sleep(200 * time.Millisecond)
 			w.WriteHeader(http.StatusOK)
 		}))
-		defer servidor.Close()
+		defer server.Close()
 
-		cliente := fetch.New(servidor.URL)
+		client := fetch.New(server.URL)
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 		defer cancel()
 
 		// Act
-		_, err := cliente.GetWithContext(ctx, "/teste")
+		_, err := client.GetWithContext(ctx, "/test")
 
 		// Assert
 		if err == nil {
-			t.Error("Esperava erro de contexto cancelado")
+			t.Error("Expected context error cancelled")
 		}
 	})
 
-	t.Run("Contexto válido", func(t *testing.T) {
+	t.Run("Valid context", func(t *testing.T) {
 		// Arrange
-		servidor := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		}))
-		defer servidor.Close()
+		defer server.Close()
 
-		cliente := fetch.New(servidor.URL)
+		client := fetch.New(server.URL)
 		ctx := context.Background()
 
 		// Act
-		resp, err := cliente.GetWithContext(ctx, "/teste")
+		resp, err := client.GetWithContext(ctx, "/test")
 
 		// Assert
 		if err != nil {
-			t.Errorf("Não esperava erro, mas recebeu: %v", err)
+			t.Errorf("Not expected error, but received: %v", err)
 		}
 		if resp.StatusCode != http.StatusOK {
-			t.Errorf("Status code incorreto. Esperado: %d, Obtido: %d", http.StatusOK, resp.StatusCode)
+			t.Errorf("Wrong status code. Expected: %d, received: %d", http.StatusOK, resp.StatusCode)
 		}
 	})
 }
 
 func TestErros(t *testing.T) {
-	t.Run("URL inválida", func(t *testing.T) {
+	t.Run("Invalid URL", func(t *testing.T) {
 		// Arrange
-		cliente := fetch.New("http://invalid-url")
+		client := fetch.New("http://invalid-url")
 
 		// Act
-		_, err := cliente.Get("/teste")
+		_, err := client.Get("/test")
 
 		// Assert
 		if err == nil {
-			t.Error("Esperava erro com URL inválida")
+			t.Error("Expected invalid URL error")
 		}
 	})
 
-	t.Run("Status code não esperado", func(t *testing.T) {
+	t.Run("Status code not expected", func(t *testing.T) {
 		// Arrange
-		servidor := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 		}))
-		defer servidor.Close()
+		defer server.Close()
 
-		cliente := fetch.New(servidor.URL)
+		client := fetch.New(server.URL)
 
 		// Act
-		_, err := cliente.Get("/teste")
+		_, err := client.Get("/test")
 
 		// Assert
 		if err == nil {
-			t.Error("Esperava erro com status code 400")
+			t.Error("Expected status code 400 error")
 		}
 	})
 }

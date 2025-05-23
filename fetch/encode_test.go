@@ -12,68 +12,67 @@ import (
 )
 
 type TestStruct struct {
-	Nome  string `json:"nome"`
-	Idade int    `json:"idade"`
+	Name string `json:"name"`
+	Age  int    `json:"age"`
 }
 
 func TestEncodeData(t *testing.T) {
 	// Arrange
-	dados := TestStruct{
-		Nome:  "João",
-		Idade: 30,
+	data := TestStruct{
+		Name: "John",
+		Age:  30,
 	}
 
 	// Act
-	reader, err := fetch.EncodeData(dados)
+	reader, err := fetch.EncodeData(data)
 
 	// Assert
 	if err != nil {
-		t.Errorf("EncodeData retornou erro inesperado: %v", err)
+		t.Errorf("EncodeData returned unexpected error: %v", err)
 	}
 
-	// Verificar se o conteúdo codificado está correto
-	conteudo, err := io.ReadAll(reader)
+	content, err := io.ReadAll(reader)
 	if err != nil {
-		t.Errorf("Erro ao ler conteúdo codificado: %v", err)
+		t.Errorf("Error while reading encoded content: %v", err)
 	}
 
-	var decodificado TestStruct
-	err = json.Unmarshal(bytes.TrimSpace(conteudo), &decodificado)
+	var decodedData TestStruct
+	err = json.Unmarshal(bytes.TrimSpace(content), &decodedData)
 	if err != nil {
-		t.Errorf("Erro ao decodificar conteúdo: %v", err)
+		t.Errorf("Error to decode content: %v", err)
 	}
 
-	if !reflect.DeepEqual(dados, decodificado) {
-		t.Errorf("Conteúdo codificado não corresponde ao esperado.\nEsperado: %+v\nObtido: %+v", dados, decodificado)
+	if !reflect.DeepEqual(data, decodedData) {
+		t.Errorf("Encoded content does not match expected. \nExpected: %+v\nreceived: %+v", data, decodedData)
 	}
 }
 
 func TestDecodeJson(t *testing.T) {
 	// Arrange
-	dadosEsperados := TestStruct{
-		Nome:  "Maria",
-		Idade: 25,
+	expectedData := TestStruct{
+		Name: "Mary",
+		Age:  25,
 	}
 
-	jsonData, _ := json.Marshal(dadosEsperados)
-	resposta := &http.Response{
+	jsonData, _ := json.Marshal(expectedData)
+	response := &http.Response{
 		Body: io.NopCloser(bytes.NewBuffer(jsonData)),
 	}
 
 	// Act
-	resultado, err := fetch.DecodeJson[TestStruct](resposta)
+	result, err := fetch.DecodeJson[TestStruct](response)
 
 	// Assert
 	if err != nil {
-		t.Errorf("DecodeJson retornou erro inesperado: %v", err)
+		t.Errorf("DecodeJson returned unexpected error: %v", err)
 	}
 
-	if resultado == nil {
-		t.Fatal("DecodeJson retornou nil")
+	if result == nil {
+		t.Fatal("DecodeJson returned nil")
 	}
 
-	if !reflect.DeepEqual(*resultado, dadosEsperados) {
-		t.Errorf("Conteúdo decodificado não corresponde ao esperado.\nEsperado: %+v\nObtido: %+v", dadosEsperados, *resultado)
+	if !reflect.DeepEqual(*result, expectedData) {
+		t.Errorf("Content decoded does not match expected.\nExpected: %+v\nreceived: %+v", expectedData, *result)
 	}
 }
 
@@ -82,22 +81,22 @@ func TestEncodeData_Erro(t *testing.T) {
 	ch := make(chan int)
 	_, err := fetch.EncodeData(ch)
 	if err == nil {
-		t.Error("EncodeData deveria retornar erro para tipos não codificáveis")
+		t.Error("EncodeData must return an error for non-encodable types")
 	}
 }
 
 func TestDecodeJson_Erro(t *testing.T) {
 	// Arrange
-	jsonInvalido := `{"nome": "João", "idade": "invalid"}`
-	resposta := &http.Response{
-		Body: io.NopCloser(strings.NewReader(jsonInvalido)),
+	invalidJson := `{"name": "John", "age": "invalid"}`
+	response := &http.Response{
+		Body: io.NopCloser(strings.NewReader(invalidJson)),
 	}
 
 	// Act
-	_, err := fetch.DecodeJson[TestStruct](resposta)
+	_, err := fetch.DecodeJson[TestStruct](response)
 
 	// Assert
 	if err == nil {
-		t.Error("DecodeJson deveria retornar erro para JSON inválido")
+		t.Error("DecodeJson must return an error for invalid JSON data")
 	}
 }
