@@ -1,6 +1,8 @@
 package fetch
 
-import "net/http"
+import (
+	"net/http"
+)
 
 type requestOpt func(r *http.Request)
 

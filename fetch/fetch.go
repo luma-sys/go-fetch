@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"io"
+	"log"
 	"net/http"
+	"time"
 )
 
 type FetchAPI interface {
@@ -13,12 +15,14 @@ type FetchAPI interface {
 	Put(path string, body io.Reader, opts ...requestOpt) (*http.Response, error)
 	Post(path string, body io.Reader, opts ...requestOpt) (*http.Response, error)
 	Get(path string, opts ...requestOpt) (*http.Response, error)
+	SetOptions(opts ...fetchOpt) FetchAPI
 	GetWithContext(ctx context.Context, path string, opts ...requestOpt) (*http.Response, error)
 }
 
 type fetch struct {
 	baseURL  string
 	attempts int
+	timeout  time.Duration
 }
 
 type fetchOpt func(f *fetch)
@@ -29,8 +33,27 @@ func WithRetry(retry int) fetchOpt {
 	}
 }
 
+func WithTimeout(timeout time.Duration) fetchOpt {
+	return func(f *fetch) {
+		f.timeout = timeout
+	}
+}
+
 func New(baseURL string, opts ...fetchOpt) FetchAPI {
-	fetch := &fetch{baseURL, 1}
+	fetch := &fetch{baseURL, 1, 0}
+	for _, opt := range opts {
+		opt(fetch)
+	}
+
+	return fetch
+}
+
+func (e *fetch) SetOptions(opts ...fetchOpt) FetchAPI {
+	fetch := &fetch{
+		baseURL:  e.baseURL,
+		attempts: e.attempts,
+		timeout:  e.timeout,
+	}
 	for _, opt := range opts {
 		opt(fetch)
 	}
@@ -41,6 +64,7 @@ func New(baseURL string, opts ...fetchOpt) FetchAPI {
 func (e *fetch) request(ctx context.Context, method, path string, body io.Reader, opts ...requestOpt) (*http.Response, error) {
 	var r *http.Response
 	var err error
+	var cancel context.CancelFunc
 
 	url := e.baseURL + path
 	req, err := http.NewRequestWithContext(ctx, method, url, body)
@@ -52,19 +76,34 @@ func (e *fetch) request(ctx context.Context, method, path string, body io.Reader
 		opt(req)
 	}
 
-	for range e.attempts {
+	for i := range e.attempts {
+		if cancel != nil {
+			cancel()
+		}
+
+		if e.timeout > 0 {
+			ctx, cancel = context.WithTimeout(ctx, e.timeout)
+			req = req.WithContext(ctx)
+		}
+
 		r, err = http.DefaultClient.Do(req)
 		if err != nil {
+			log.Printf("Attempt %d failed: %v", i+1, err)
 			continue
 		}
+
 		if r.StatusCode == http.StatusOK || r.StatusCode == http.StatusCreated || r.StatusCode == http.StatusNoContent {
 			err = nil
 			break
 		}
 	}
 
+	if cancel != nil {
+		defer cancel()
+	}
+
 	if err != nil {
-		return nil, err
+		return r, err
 	}
 	if r.StatusCode != http.StatusOK && r.StatusCode != http.StatusCreated && r.StatusCode != http.StatusNoContent {
 		return r, errors.New(r.Status)
