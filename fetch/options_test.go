@@ -9,107 +9,103 @@ import (
 
 func TestWithBasicAuth(t *testing.T) {
 	// Arrange
-	requisicao, _ := http.NewRequest(http.MethodGet, "http://exemplo.com", nil)
-	usuario := "admin"
-	senha := "senha123"
+	request, _ := http.NewRequest(http.MethodGet, "http://example.com", nil)
+	user := "admin"
+	pass := "pass123"
 
 	// Act
-	opt := fetch.WithBasicAuth(usuario, senha)
-	opt(requisicao)
+	opt := fetch.WithBasicAuth(user, pass)
+	opt(request)
 
 	// Assert
-	usuarioObtido, senhaObtida, ok := requisicao.BasicAuth()
+	receivedUser, receivedPass, ok := request.BasicAuth()
 	if !ok {
-		t.Error("Basic auth não foi configurado corretamente")
+		t.Error("Basic auth not configured")
 	}
 
-	if usuarioObtido != usuario {
-		t.Errorf("Usuário incorreto. Esperado: %s, Obtido: %s", usuario, usuarioObtido)
+	if receivedUser != user {
+		t.Errorf("Wrong user. Expected: %s, received: %s", user, receivedUser)
 	}
 
-	if senhaObtida != senha {
-		t.Errorf("Senha incorreta. Esperado: %s, Obtido: %s", senha, senhaObtida)
+	if receivedPass != pass {
+		t.Errorf("Wrong password. Expected: %s, received: %s", pass, receivedPass)
 	}
 }
 
 func TestWithHeader(t *testing.T) {
-	testes := []struct {
-		nome      string
-		chave     string
-		valor     string
-		esperado  []string
-		existente string
+	tests := []struct {
+		name     string
+		key      string
+		value    string
+		expected []string
+		existent string
 	}{
 		{
-			nome:     "Header simples",
-			chave:    "Content-Type",
-			valor:    "application/json",
-			esperado: []string{"application/json"},
+			name:     "Header simples",
+			key:      "Content-Type",
+			value:    "application/json",
+			expected: []string{"application/json"},
 		},
 		{
-			nome:      "Header com valor existente",
-			chave:     "Accept",
-			valor:     "application/xml",
-			existente: "application/json",
-			esperado:  []string{"application/json", "application/xml"},
+			name:     "Header com value existent",
+			key:      "Accept",
+			value:    "application/xml",
+			existent: "application/json",
+			expected: []string{"application/json", "application/xml"},
 		},
 		{
-			nome:     "Header personalizado",
-			chave:    "X-Custom-Header",
-			valor:    "valor-teste",
-			esperado: []string{"valor-teste"},
+			name:     "Header personalizado",
+			key:      "X-Custom-Header",
+			value:    "value-teste",
+			expected: []string{"value-teste"},
 		},
 	}
 
-	for _, tt := range testes {
-		t.Run(tt.nome, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			// Arrange
-			requisicao, _ := http.NewRequest(http.MethodGet, "http://exemplo.com", nil)
+			request, _ := http.NewRequest(http.MethodGet, "http://example.com", nil)
 
-			// Adiciona header existente, se especificado
-			if tt.existente != "" {
-				requisicao.Header.Add(tt.chave, tt.existente)
+			if tt.existent != "" {
+				request.Header.Add(tt.key, tt.existent)
 			}
 
 			// Act
-			opt := fetch.WithHeader(tt.chave, tt.valor)
-			opt(requisicao)
+			opt := fetch.WithHeader(tt.key, tt.value)
+			opt(request)
 
 			// Assert
-			valoresObtidos := requisicao.Header.Values(tt.chave)
-			if !reflect.DeepEqual(valoresObtidos, tt.esperado) {
-				t.Errorf("Header incorreto para %s.\nEsperado: %v\nObtido: %v",
-					tt.chave, tt.esperado, valoresObtidos)
+			valreceivedUeess := request.Header.Values(tt.key)
+			if !reflect.DeepEqual(valreceivedUeess, tt.expected) {
+				t.Errorf("Invalid Header to %s.\nExpected: %v\nreceived: %v", tt.key, tt.expected, valreceivedUeess)
 			}
-
 		})
 	}
 }
 
-func TestHeadersMultiplos(t *testing.T) {
+func TestMultipleHeaders(t *testing.T) {
 	// Arrange
-	requisicao, _ := http.NewRequest(http.MethodGet, "http://exemplo.com", nil)
+	request, _ := http.NewRequest(http.MethodGet, "http://example.com", nil)
 	headers := []struct {
-		chave string
-		valor string
+		key   string
+		value string
 	}{
 		{"Accept", "application/json"},
-		{"X-API-Key", "chave123"},
+		{"X-API-Key", "key123"},
 		{"User-Agent", "TestClient"},
 	}
 
 	// Act
 	for _, h := range headers {
-		opt := fetch.WithHeader(h.chave, h.valor)
-		opt(requisicao)
+		opt := fetch.WithHeader(h.key, h.value)
+		opt(request)
 	}
 
 	// Assert
 	for _, h := range headers {
-		valor := requisicao.Header.Get(h.chave)
-		if valor != h.valor {
-			t.Errorf("Header %s incorreto.\nEsperado: %s\nObtido: %s",
-				h.chave, h.valor, valor)
+		value := request.Header.Get(h.key)
+		if value != h.value {
+			t.Errorf("Invalid Header to %s.\nExpected: %s\nreceived: %s", h.key, h.value, value)
 		}
 	}
 }
