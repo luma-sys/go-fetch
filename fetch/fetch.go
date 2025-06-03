@@ -69,6 +69,14 @@ func (e *fetch) SetOptions(opts ...fetchOpt) FetchAPI {
 	return fetch
 }
 
+// isSuccessStatusCode verifica se o código de status indica sucesso
+func isSuccessStatusCode(statusCode int) bool {
+	return statusCode == http.StatusOK ||
+		statusCode == http.StatusCreated ||
+		statusCode == http.StatusNoContent ||
+		statusCode == http.StatusPartialContent
+}
+
 func (e *fetch) request(ctx context.Context, method, path string, body io.Reader, opts ...requestOpt) (*http.Response, error) {
 	var r *http.Response
 	var err error
@@ -104,7 +112,7 @@ func (e *fetch) request(ctx context.Context, method, path string, body io.Reader
 			continue
 		}
 
-		if r.StatusCode == http.StatusOK || r.StatusCode == http.StatusCreated || r.StatusCode == http.StatusNoContent {
+		if isSuccessStatusCode(r.StatusCode) {
 			err = nil
 			break
 		}
@@ -117,7 +125,7 @@ func (e *fetch) request(ctx context.Context, method, path string, body io.Reader
 	if err != nil {
 		return r, err
 	}
-	if r.StatusCode != http.StatusOK && r.StatusCode != http.StatusCreated && r.StatusCode != http.StatusNoContent {
+	if !isSuccessStatusCode(r.StatusCode) {
 		return r, errors.New(r.Status)
 	}
 
