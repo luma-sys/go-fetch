@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"net/http"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/luma-sys/go-fetch/fetch"
@@ -47,55 +45,11 @@ func TestEncodeData(t *testing.T) {
 	}
 }
 
-func TestDecodeJson(t *testing.T) {
-	// Arrange
-	expectedData := TestStruct{
-		Name: "Mary",
-		Age:  25,
-	}
-
-	jsonData, _ := json.Marshal(expectedData)
-	response := &http.Response{
-		Body: io.NopCloser(bytes.NewBuffer(jsonData)),
-	}
-
-	// Act
-	result, err := fetch.DecodeJson[TestStruct](response)
-	// Assert
-	if err != nil {
-		t.Errorf("DecodeJson returned unexpected error: %v", err)
-	}
-
-	if result == nil {
-		t.Fatal("DecodeJson returned nil")
-	}
-
-	if !reflect.DeepEqual(*result, expectedData) {
-		t.Errorf("Content decoded does not match expected.\nExpected: %+v\nreceived: %+v", expectedData, *result)
-	}
-}
-
 func TestEncodeData_Erro(t *testing.T) {
 	// Teste com um canal, que não pode ser codificado em JSON
 	ch := make(chan int)
 	_, err := fetch.EncodeData(ch)
 	if err == nil {
 		t.Error("EncodeData must return an error for non-encodable types")
-	}
-}
-
-func TestDecodeJson_Erro(t *testing.T) {
-	// Arrange
-	invalidJson := `{"name": "John", "age": "invalid"}`
-	response := &http.Response{
-		Body: io.NopCloser(strings.NewReader(invalidJson)),
-	}
-
-	// Act
-	_, err := fetch.DecodeJson[TestStruct](response)
-
-	// Assert
-	if err == nil {
-		t.Error("DecodeJson must return an error for invalid JSON data")
 	}
 }

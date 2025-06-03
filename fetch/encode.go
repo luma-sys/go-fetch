@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"net/http"
 )
 
 func EncodeData[T any](data T) (io.Reader, error) {
@@ -17,8 +16,12 @@ func EncodeData[T any](data T) (io.Reader, error) {
 	return &body, nil
 }
 
-func DecodeJson[T any](r *http.Response) (*T, error) {
+// deprecated: prefer fetchResponse.DecodeJson
+func DecodeJson[T any](r *FetchResponse) (*T, error) {
 	defer r.Body.Close()
+	if r.cancel != nil {
+		defer r.cancel()
+	}
 
 	var body T
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {

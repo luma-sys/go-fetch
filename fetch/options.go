@@ -6,14 +6,20 @@ import (
 
 type requestOpt func(r *http.Request)
 
+func WithHeader(key, value string) requestOpt {
+	return func(r *http.Request) {
+		r.Header.Add(key, value)
+	}
+}
+
 func WithBasicAuth(user, pass string) requestOpt {
 	return func(r *http.Request) {
 		r.SetBasicAuth(user, pass)
 	}
 }
 
-func WithHeader(key, value string) requestOpt {
+func WithJsonBody() requestOpt {
 	return func(r *http.Request) {
-		r.Header.Add(key, value)
+		r.Header.Add("Content-Type", "application/json")
 	}
 }

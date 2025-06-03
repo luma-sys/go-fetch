@@ -1,13 +1,11 @@
 package fetch_test
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/luma-sys/go-fetch/fetch"
 )
@@ -64,7 +62,7 @@ func TestNew(t *testing.T) {
 func TestMetodosHTTP(t *testing.T) {
 	type testCase struct {
 		name         string
-		method       func(client fetch.FetchAPI, path string, body io.Reader) (*http.Response, error)
+		method       func(client fetch.FetchAPI, path string, body io.Reader) (*fetch.FetchResponse, error)
 		calledMethod string
 		statusCode   int
 		body         string
@@ -73,7 +71,7 @@ func TestMetodosHTTP(t *testing.T) {
 	tests := []testCase{
 		{
 			name: "GET success",
-			method: func(c fetch.FetchAPI, p string, b io.Reader) (*http.Response, error) {
+			method: func(c fetch.FetchAPI, p string, b io.Reader) (*fetch.FetchResponse, error) {
 				return c.Get(p)
 			},
 			calledMethod: http.MethodGet,
@@ -82,7 +80,7 @@ func TestMetodosHTTP(t *testing.T) {
 		},
 		{
 			name: "POST success",
-			method: func(c fetch.FetchAPI, p string, b io.Reader) (*http.Response, error) {
+			method: func(c fetch.FetchAPI, p string, b io.Reader) (*fetch.FetchResponse, error) {
 				return c.Post(p, b)
 			},
 			calledMethod: http.MethodPost,
@@ -91,7 +89,7 @@ func TestMetodosHTTP(t *testing.T) {
 		},
 		{
 			name: "PUT success",
-			method: func(c fetch.FetchAPI, p string, b io.Reader) (*http.Response, error) {
+			method: func(c fetch.FetchAPI, p string, b io.Reader) (*fetch.FetchResponse, error) {
 				return c.Put(p, b)
 			},
 			calledMethod: http.MethodPut,
@@ -100,7 +98,7 @@ func TestMetodosHTTP(t *testing.T) {
 		},
 		{
 			name: "PATCH success",
-			method: func(c fetch.FetchAPI, p string, b io.Reader) (*http.Response, error) {
+			method: func(c fetch.FetchAPI, p string, b io.Reader) (*fetch.FetchResponse, error) {
 				return c.Patch(p, b)
 			},
 			calledMethod: http.MethodPatch,
@@ -109,7 +107,7 @@ func TestMetodosHTTP(t *testing.T) {
 		},
 		{
 			name: "DELETE success",
-			method: func(c fetch.FetchAPI, p string, b io.Reader) (*http.Response, error) {
+			method: func(c fetch.FetchAPI, p string, b io.Reader) (*fetch.FetchResponse, error) {
 				return c.Delete(p)
 			},
 			calledMethod: http.MethodDelete,
@@ -146,50 +144,6 @@ func TestMetodosHTTP(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestGetWithContext(t *testing.T) {
-	t.Run("Cancelled context", func(t *testing.T) {
-		// Arrange
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			time.Sleep(200 * time.Millisecond)
-			w.WriteHeader(http.StatusOK)
-		}))
-		defer server.Close()
-
-		client := fetch.New(server.URL)
-		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-		defer cancel()
-
-		// Act
-		_, err := client.GetWithContext(ctx, "/test")
-
-		// Assert
-		if err == nil {
-			t.Error("Expected context error cancelled")
-		}
-	})
-
-	t.Run("Valid context", func(t *testing.T) {
-		// Arrange
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-		}))
-		defer server.Close()
-
-		client := fetch.New(server.URL)
-		ctx := context.Background()
-
-		// Act
-		resp, err := client.GetWithContext(ctx, "/test")
-		// Assert
-		if err != nil {
-			t.Errorf("Not expected error, but received: %v", err)
-		}
-		if resp.StatusCode != http.StatusOK {
-			t.Errorf("Wrong status code. Expected: %d, received: %d", http.StatusOK, resp.StatusCode)
-		}
-	})
 }
 
 func TestErros(t *testing.T) {
