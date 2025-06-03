@@ -20,9 +20,10 @@ type FetchAPI interface {
 }
 
 type fetch struct {
-	baseURL  string
-	attempts int
-	timeout  time.Duration
+	baseURL     string
+	attempts    int
+	timeout     time.Duration
+	requestOpts []requestOpt
 }
 
 type fetchOpt func(f *fetch)
@@ -39,8 +40,14 @@ func WithTimeout(timeout time.Duration) fetchOpt {
 	}
 }
 
+func WithDefaultRequestOpts(opts ...requestOpt) fetchOpt {
+	return func(f *fetch) {
+		f.requestOpts = opts
+	}
+}
+
 func New(baseURL string, opts ...fetchOpt) FetchAPI {
-	fetch := &fetch{baseURL, 1, 0}
+	fetch := &fetch{baseURL, 1, 0, []requestOpt{}}
 	for _, opt := range opts {
 		opt(fetch)
 	}
@@ -50,9 +57,10 @@ func New(baseURL string, opts ...fetchOpt) FetchAPI {
 
 func (e *fetch) SetOptions(opts ...fetchOpt) FetchAPI {
 	fetch := &fetch{
-		baseURL:  e.baseURL,
-		attempts: e.attempts,
-		timeout:  e.timeout,
+		baseURL:     e.baseURL,
+		attempts:    e.attempts,
+		timeout:     e.timeout,
+		requestOpts: e.requestOpts,
 	}
 	for _, opt := range opts {
 		opt(fetch)
@@ -70,6 +78,10 @@ func (e *fetch) request(ctx context.Context, method, path string, body io.Reader
 	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
 		return nil, err
+	}
+
+	for _, opt := range e.requestOpts {
+		opt(req)
 	}
 
 	for _, opt := range opts {
