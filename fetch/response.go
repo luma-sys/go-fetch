@@ -11,7 +11,7 @@ type FetchResponse struct {
 	cancel context.CancelFunc
 }
 
-func (r *FetchResponse) DecodeJson(body *any) error {
+func (r *FetchResponse) DecodeJson(body any) error {
 	defer r.Body.Close()
 	if r.cancel != nil {
 		defer r.cancel()
