@@ -1,25 +1,25 @@
 package fetch
 
-import (
-	"net/http"
-)
+import "net/http"
 
-type requestOpt func(r *http.Request)
+type RequestOpt func(r *http.Request)
 
-func WithHeader(key, value string) requestOpt {
-	return func(r *http.Request) {
-		r.Header.Add(key, value)
-	}
-}
-
-func WithBasicAuth(user, pass string) requestOpt {
+func WithBasicAuth(user, pass string) RequestOpt {
 	return func(r *http.Request) {
 		r.SetBasicAuth(user, pass)
 	}
 }
 
-func WithJsonBody() requestOpt {
+func WithHeader(key, value string) RequestOpt {
 	return func(r *http.Request) {
-		r.Header.Add("Content-Type", "application/json")
+		r.Header.Add(key, value)
 	}
+}
+
+func WithBearerToken(token string) RequestOpt {
+	return WithHeader("Authorization", "Bearer "+token)
+}
+
+func WithJsonBody() RequestOpt {
+	return WithHeader("Content-Type", "application/json")
 }
