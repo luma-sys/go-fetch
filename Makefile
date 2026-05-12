@@ -5,7 +5,7 @@ all: help
 .PHONY: help
 help: Makefile
 	@echo
-	@echo "-- GO DB STORE --"
+	@echo "-- GO FETCH --"
 	@echo "Choose a make command to run"
 	@echo
 	@sed -n 's/^##//p' $< | column -t -s ':' |  sed -e 's/^/ /'

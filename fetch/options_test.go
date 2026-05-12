@@ -76,11 +76,37 @@ func TestWithHeader(t *testing.T) {
 			opt(request)
 
 			// Assert
-			valreceivedUeess := request.Header.Values(tt.key)
-			if !reflect.DeepEqual(valreceivedUeess, tt.expected) {
-				t.Errorf("Invalid Header to %s.\nExpected: %v\nreceived: %v", tt.key, tt.expected, valreceivedUeess)
+			values := request.Header.Values(tt.key)
+			if !reflect.DeepEqual(values, tt.expected) {
+				t.Errorf("Invalid Header to %s.\nExpected: %v\nreceived: %v", tt.key, tt.expected, values)
 			}
 		})
+	}
+}
+
+func TestWithBearerToken(t *testing.T) {
+	request, _ := http.NewRequest(http.MethodGet, "http://example.com", nil)
+	token := "my-secret-token"
+
+	opt := fetch.WithBearerToken(token)
+	opt(request)
+
+	got := request.Header.Get("Authorization")
+	want := "Bearer " + token
+	if got != want {
+		t.Errorf("Expected %q, got %q", want, got)
+	}
+}
+
+func TestWithJsonBody(t *testing.T) {
+	request, _ := http.NewRequest(http.MethodPost, "http://example.com", nil)
+
+	opt := fetch.WithJsonBody()
+	opt(request)
+
+	got := request.Header.Get("Content-Type")
+	if got != "application/json" {
+		t.Errorf("Expected application/json, got %q", got)
 	}
 }
 
