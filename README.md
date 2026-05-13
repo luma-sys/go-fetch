@@ -1,5 +1,8 @@
 # go-fetch
 
+[![Tests](https://github.com/luma-sys/go-fetch/actions/workflows/test.yml/badge.svg)](https://github.com/luma-sys/go-fetch/actions/workflows/test.yml)
+[![Release](https://github.com/luma-sys/go-fetch/actions/workflows/release.yml/badge.svg)](https://github.com/luma-sys/go-fetch/actions/workflows/release.yml)
+
 Simple HTTP client for Go with retry, timeout, and per-request options.
 
 ## Installation
