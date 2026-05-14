@@ -1,6 +1,6 @@
 module github.com/luma-sys/go-fetch
 
-go 1.25
+go 1.26
 
 require github.com/moul/http2curl v1.0.0
 
