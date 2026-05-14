@@ -14,16 +14,18 @@ import (
 	"github.com/moul/http2curl"
 )
 
-const maxRetryBodySize = 15 * 1024 * 1024 // 15MB
-
-const defaultTimeout = 5 * time.Minute
+const (
+	maxRetryBodySize = 15 * 1024 * 1024 // 15MB
+	defaultTimeout   = 90 * time.Second
+)
 
 var defaultHTTPClient = &http.Client{
 	Transport: func() *http.Transport {
 		t := http.DefaultTransport.(*http.Transport).Clone()
 		t.MaxIdleConns = 100
-		t.MaxIdleConnsPerHost = 20
-		t.IdleConnTimeout = 5 * time.Minute
+		t.MaxIdleConnsPerHost = 5
+		t.IdleConnTimeout = 2 * time.Minute
+		t.DisableKeepAlives = true
 		return t
 	}(),
 }
@@ -126,7 +128,7 @@ func isRetryable(statusCode int) bool {
 }
 
 func retryBackoff(attempt int) time.Duration {
-	return time.Duration(attempt) * 100 * time.Millisecond
+	return time.Duration(attempt) * 200 * time.Millisecond
 }
 
 func (e *fetch) request(ctx context.Context, method, path string, body io.Reader, opts ...RequestOpt) (*FetchResponse, error) {
