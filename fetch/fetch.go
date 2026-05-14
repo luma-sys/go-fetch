@@ -23,9 +23,8 @@ var defaultHTTPClient = &http.Client{
 	Transport: func() *http.Transport {
 		t := http.DefaultTransport.(*http.Transport).Clone()
 		t.MaxIdleConns = 100
-		t.MaxIdleConnsPerHost = 5
+		t.MaxIdleConnsPerHost = 10
 		t.IdleConnTimeout = 2 * time.Minute
-		t.DisableKeepAlives = true
 		return t
 	}(),
 }
