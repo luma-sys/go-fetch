@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -33,7 +34,7 @@ func DecodeJSON[T any](r *FetchResponse) (*T, error) {
 
 	var body T
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", ErrFetchDecodeJSON, err)
 	}
 
 	return &body, nil

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"time"
 
@@ -14,6 +15,8 @@ import (
 )
 
 const maxRetryBodySize = 15 * 1024 * 1024 // 15MB
+
+const defaultTimeout = 5 * time.Minute
 
 var defaultHTTPClient = &http.Client{
 	Transport: func() *http.Transport {
@@ -88,6 +91,7 @@ func New(baseURL string, opts ...FetchOpt) FetchAPI {
 	f := &fetch{
 		baseURL:    baseURL,
 		attempts:   1,
+		timeout:    defaultTimeout,
 		httpClient: defaultHTTPClient,
 	}
 	for _, opt := range opts {
@@ -134,12 +138,14 @@ func (e *fetch) request(ctx context.Context, method, path string, body io.Reader
 		if err != nil {
 			return nil, err
 		}
+
 		if len(bodyBytes) > maxRetryBodySize {
 			if c, ok := body.(io.Closer); ok {
 				_ = c.Close()
 			}
-			return nil, errors.New("request body exceeds max size")
+			return nil, ErrFetchBodyTooLarge
 		}
+
 		if c, ok := body.(io.Closer); ok {
 			_ = c.Close()
 		}
@@ -197,7 +203,7 @@ func (e *fetch) request(ctx context.Context, method, path string, body io.Reader
 
 		if e.debugWriter != nil {
 			if cmd, curlErr := http2curl.GetCurlCommand(req); curlErr == nil {
-				fmt.Fprintln(e.debugWriter, cmd)
+				_, _ = fmt.Fprintln(e.debugWriter, cmd)
 			}
 			// GetCurlCommand reads req.Body — restore it so Do sends the actual payload.
 			if req.GetBody != nil {
@@ -208,6 +214,14 @@ func (e *fetch) request(ctx context.Context, method, path string, body io.Reader
 		r, lastErr = e.httpClient.Do(req)
 		if lastErr != nil {
 			r = nil
+			if e.timeout > 0 && errors.Is(reqCtx.Err(), context.DeadlineExceeded) && ctx.Err() == nil {
+				lastErr = fmt.Errorf("%w: %w", ErrFetchRequestTimeout, lastErr)
+			} else if ctx.Err() == nil {
+				var netErr net.Error
+				if errors.As(lastErr, &netErr) && netErr.Timeout() {
+					lastErr = fmt.Errorf("%w: %w", ErrFetchTransportTimeout, lastErr)
+				}
+			}
 			continue
 		}
 
@@ -223,7 +237,7 @@ func (e *fetch) request(ctx context.Context, method, path string, body io.Reader
 		} else {
 			r.Body = io.NopCloser(bytes.NewReader(responseBody))
 		}
-		lastErr = errors.New("request failed with status: " + r.Status)
+		lastErr = &ErrFetchHTTPStatus{StatusCode: r.StatusCode, Status: r.Status}
 
 		if !isRetryable(r.StatusCode) {
 			break
