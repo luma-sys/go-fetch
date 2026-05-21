@@ -72,6 +72,7 @@ func (e *fetch) SetOptions(opts ...FetchOpt) FetchAPI {
 	for _, opt := range opts {
 		opt(newFetch)
 	}
+
 	return newFetch
 }
 
@@ -86,7 +87,7 @@ func isRetryable(statusCode int) bool {
 }
 
 func retryBackoff(attempt int) time.Duration {
-	return time.Duration(attempt) * 200 * time.Millisecond
+	return time.Duration(attempt) * time.Second
 }
 
 func (e *fetch) request(ctx context.Context, method, path string, body io.Reader, opts ...RequestOpt) (*FetchResponse, error) {
